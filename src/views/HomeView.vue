@@ -1,18 +1,21 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png" />
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App" />
+  <div class="home flex justify-center items-center">
+    <login-register-view />
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
-import HelloWorld from "@/components/HelloWorld.vue"; // @ is an alias to /src
-
-export default defineComponent({
-  name: "HomeView",
-  components: {
-    HelloWorld,
-  },
-});
+<script lang="ts" setup>
+import LoginRegisterView from '@/views/LoginRegisterView.vue';
 </script>
+
+<style scoped>
+.home {
+  background: url('../assets/img/background-blur.jpg') no-repeat;
+  background-position: center;
+  background-attachment: fixed;
+  background-size: cover;
+  height: 100vh;
+  z-index: -1000;
+}
+</style>
+
