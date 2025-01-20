@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getFirestore } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 
 import { auth } from '@/firebase/config';
 import { db } from '@/firebase/config';

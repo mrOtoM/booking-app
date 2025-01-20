@@ -1,9 +1,9 @@
 <template>
   <div class="calendar">
     <div class="calendar-header">
-      <button @click="changeMonth(-1)">‹</button>
+      <button class="w-4" @click="prevMonth">‹</button>
       <span>{{ monthName }} {{ year }}</span>
-      <button @click="changeMonth(1)">›</button>
+      <button class="w-4" @click="nextMonth">›</button>
     </div>
 
     <div class="calendar-grid">
@@ -27,8 +27,8 @@
             class="info-message"
             :class="`info-message--${getBoxClass(box.trainingType)}`"
           >
-            <p>{{ box.name }}</p>
-            <p>{{ box.time }}</p>
+            <p>{{ box.trainingName }}</p>
+            <p>{{ box.trainingTime }}</p>
           </div>
         </div>
       </div>
@@ -37,7 +37,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import dayjs from 'dayjs';
 
 import useData from '@/composables/useData';
@@ -47,22 +47,22 @@ const { getMonthlyTrainingsCollection } = useData();
 
 const props = defineProps<{
   show: boolean;
-  month: string;
 }>();
 
 const emit = defineEmits<{
-  (e: 'selected-date', date: Date): void;
+  (e: 'selected-date-admin', date: string): void;
+  (e: 'selected-date-user', payload: SpecialDayInfo): void;
   (e: 'update:show', show: boolean): void;
-  (e: 'update:month', newMonth: string): void;
 }>();
 
 const today = dayjs();
 const year = ref(today.year());
 const month = ref(today.month());
-const selectedDate = ref(today);
+const selectedDate = ref();
 const daysOfWeek = ['Po', 'Ut', 'St', 'Štv', 'Pi', 'So', 'Ne'];
 const specialDays = ref<Record<string, SpecialDayInfo[]>>({});
 const monthName = computed(() => dayjs().month(month.value).format('MMMM'));
+let unsubscribeMonthlyTrainings: null | (() => void) = null;
 
 const days = computed(() => {
   const startOfMonth = dayjs().year(year.value).month(month.value).startOf('month');
@@ -87,22 +87,47 @@ const days = computed(() => {
 const isToday = (date: Date) => dayjs(date).isSame(today, 'day');
 
 const isSpecialDay = (date: Date) => {
-  const dayNum = dayjs(date).format('DD');
+  const dayNum = dayjs(date).format('YYYY_MM_DD');
   return !!specialDays.value[dayNum];
 };
 
 const getSpecialDayInfo = (date: Date): SpecialDayInfo[] => {
-  const dayNum = dayjs(date).format('DD');
+  const dayNum = dayjs(date).format('YYYY_MM_DD');
   return specialDays.value[dayNum] || [];
 };
 
+const formatDate = (date: dayjs.Dayjs | Date) => {
+  return dayjs(date).format('DD.MM.YYYY');
+};
+
 const selectDate = (date: Date) => {
-  selectedDate.value = dayjs(date);
-  emit('selected-date', selectedDate.value.toDate());
+  selectedDate.value = date;
+
+  const formattedDate = formatDate(date);
+
+  const dayInfoArray = getSpecialDayInfo(date);
+  const dayInfo: SpecialDayInfo = dayInfoArray[0] || {
+    trainingName: '',
+    trainingTime: '',
+    trainingType: '',
+    trainingDate: formattedDate,
+  };
+
+  emit('selected-date-admin', formattedDate);
+
+  emit('selected-date-user', {
+    ...dayInfo,
+    trainingDate: formattedDate,
+  });
 };
 
 const getMonthlyTrainings = (monthString: string) => {
-  getMonthlyTrainingsCollection(
+  if (unsubscribeMonthlyTrainings) {
+    unsubscribeMonthlyTrainings();
+    unsubscribeMonthlyTrainings = null;
+  }
+
+  unsubscribeMonthlyTrainings = getMonthlyTrainingsCollection(
     monthString,
     (docs) => {
       const tempSpecialDays: Record<string, SpecialDayInfo[]> = {};
@@ -113,8 +138,8 @@ const getMonthlyTrainings = (monthString: string) => {
           tempSpecialDays[dayId] = [];
         }
         tempSpecialDays[dayId].push({
-          name: doc.name,
-          time: doc.time,
+          trainingName: doc.trainingName,
+          trainingTime: doc.trainingTime,
           trainingType: doc.trainingType,
         });
       });
@@ -127,16 +152,27 @@ const getMonthlyTrainings = (monthString: string) => {
   );
 };
 
-const changeMonth = (direction: number) => {
-  if ((month.value === 11 && direction === 1) || (month.value === 0 && direction === -1)) {
-    month.value = direction === 1 ? 0 : 11;
-    year.value += direction;
+const nextMonth = () => {
+  if (month.value === 11) {
+    month.value = 0;
+    year.value++;
   } else {
-    month.value += direction;
+    month.value++;
   }
+  const paddedMonth = String(month.value + 1).padStart(2, '0');
+  const monthString = `${paddedMonth}_${year.value}`;
+  getMonthlyTrainings(monthString);
+};
 
-  const monthString = `${month.value + 1}_${year.value}`;
-  emit('update:month', monthString);
+const prevMonth = () => {
+  if (month.value === 0) {
+    month.value = 11;
+    year.value--;
+  } else {
+    month.value--;
+  }
+  const paddedMonth = String(month.value + 1).padStart(2, '0');
+  const monthString = `${paddedMonth}_${year.value}`;
   getMonthlyTrainings(monthString);
 };
 
@@ -160,9 +196,16 @@ const getBoxClass = (type: string): string => {
 };
 
 onMounted(() => {
-  const initialMonthString = `${month.value + 1}_${year.value}`;
+  const paddedMonth = String(month.value + 1).padStart(2, '0');
+  const initialMonthString = `${paddedMonth}_${year.value}`;
   getMonthlyTrainings(initialMonthString);
-  emit('update:month', initialMonthString);
+});
+
+onBeforeUnmount(() => {
+  if (unsubscribeMonthlyTrainings) {
+    unsubscribeMonthlyTrainings();
+    unsubscribeMonthlyTrainings = null;
+  }
 });
 </script>
 

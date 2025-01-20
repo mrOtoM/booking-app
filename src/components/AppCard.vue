@@ -1,4 +1,4 @@
-<template>
+<template v-slot:custom-content>
   <div class="card">
     <h1>{{ title }}</h1>
     <div>

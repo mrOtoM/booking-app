@@ -7,7 +7,7 @@
         <div class="admin-content">
           <app-card title="Kalendar">
             <template v-slot:custom-content>
-              <app-calendar :show="isModalOpen" v-model:month="trainingMonth" @selected-date="handleDateSelection" />
+              <app-calendar v-model:show="isModalOpen" @selected-date-admin="handleDateSelectionAdmin" />
             </template>
           </app-card>
           <app-card title="Zoznam prihlasenych treningov">
@@ -65,8 +65,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed } from 'vue';
-import dayjs from 'dayjs';
+import { ref, onMounted } from 'vue';
 
 import useUser from '@/composables/useUser';
 import useData from '@/composables/useData';
@@ -78,24 +77,12 @@ import AppCalendar from '@/components/AppCalendar.vue';
 const { isUserProfileLoading, userProfile } = useUser();
 const { getTrainingTypesDocument, createTrainingDocument } = useData();
 
-onMounted(async () => {
-  await getTrainingTypes();
-
-  if (trainingTypes.value && trainingTypes.value.length > 0) {
-    selectedTraining.value = trainingTypes.value[0];
-  }
-});
-
 const isModalOpen = ref(false);
-const selectedDate = ref<Date>();
+const selectedDate = ref<string>();
 const selectedTraining = ref();
 const trainingTypes = ref();
 const selectedHour = ref('18');
 const selectedMinute = ref('30');
-const trainingMonth = ref('');
-const trainingName = computed(() => {
-  return dayjs(selectedDate.value).format('DD');
-});
 
 const hours = Array.from({ length: 17 }, (_, i) => (i + 6).toString().padStart(2, '0'));
 const minutes = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'));
@@ -110,26 +97,42 @@ const getTrainingTypes = async () => {
 };
 
 const createTraining = async () => {
+  const parts = selectedDate.value?.split('.');
+  const monthYear = `${parts?.[1]}_${parts?.[2]}`;
+  const YearMontDay = `${parts?.[2]}_${parts?.[1]}_${parts?.[0]}`;
+
   const trainingData = {
-    name: selectedTraining.value.name,
-    time: `${selectedHour.value}:${selectedMinute.value}`,
+    trainingName: selectedTraining.value.name,
+    trainingTime: `${selectedHour.value}:${selectedMinute.value}`,
     trainingType: selectedTraining.value.value,
     participants: [],
   };
 
-  try {
-    await createTrainingDocument(trainingMonth.value, trainingName.value, trainingData);
-  } catch (err) {
-    console.error(err);
-  } finally {
-    isModalOpen.value = false;
+  if (monthYear && YearMontDay) {
+    try {
+      await createTrainingDocument(monthYear, YearMontDay, trainingData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      isModalOpen.value = false;
+    }
   }
 };
 
-const handleDateSelection = (date: Date) => {
-  isModalOpen.value = true;
+const handleDateSelectionAdmin = (date: string) => {
   selectedDate.value = date;
+  isModalOpen.value = true;
+
+  console.log('selected-date-admin', date);
 };
+
+onMounted(async () => {
+  await getTrainingTypes();
+
+  if (trainingTypes.value && trainingTypes.value.length > 0) {
+    selectedTraining.value = trainingTypes.value[0];
+  }
+});
 </script>
 
 <style scoped>

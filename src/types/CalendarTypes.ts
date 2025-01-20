@@ -1,5 +1,6 @@
 export interface SpecialDayInfo {
-  name: string;
-  time: string;
+  trainingName: string;
+  trainingTime: string;
   trainingType: string;
+  trainingDate?: string;
 }
