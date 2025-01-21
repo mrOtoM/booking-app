@@ -21,27 +21,25 @@ const useData = () => {
     userId: string,
     trainingDataToProfile: any
   ) => {
-    const participantDocRef = doc(db, 'trainings', trainingMonth, 'monthlyTrainings', trainingDay);
+    const participantsDocRef = doc(
+      db,
+      'trainings',
+      trainingMonth,
+      'monthlyTrainings',
+      trainingDay,
+      'participants',
+      userId
+    );
     const userDocRef = doc(db, 'users', userId);
 
     const batch = writeBatch(db);
 
-    batch.set(
-      participantDocRef,
-      {
-        participants: {
-          [trainingDataToParticipants.participantId]: {
-            ...trainingDataToParticipants,
-          },
-        },
-      },
-      { merge: true }
-    );
+    batch.set(participantsDocRef, trainingDataToParticipants, { merge: true });
 
     batch.set(
       userDocRef,
       {
-        registerTrainings: {
+        registeredTrainings: {
           [trainingDay]: {
             ...trainingDataToProfile,
           },
@@ -53,18 +51,24 @@ const useData = () => {
     await batch.commit();
   };
 
-  const unsubscribeFromTrainingWithBatch = async (trainingMonth: string, trainingDay: string, userId: string) => {
-    const trainingDocRef = doc(db, 'trainings', trainingMonth, 'monthlyTrainings', trainingDay);
+  const unsubscribeFromTrainingWithBatch = async (trainingMonth: string, trainingId: string, userId: string) => {
+    const participantsDocRef = doc(
+      db,
+      'trainings',
+      trainingMonth,
+      'monthlyTrainings',
+      trainingId,
+      'participants',
+      userId
+    );
     const userDocRef = doc(db, 'users', userId);
 
     const batch = writeBatch(db);
 
-    batch.update(trainingDocRef, {
-      [`participants.${userId}`]: deleteField(),
-    });
+    batch.delete(participantsDocRef);
 
     batch.update(userDocRef, {
-      [`registerTrainings.${trainingDay}`]: deleteField(),
+      [`registeredTrainings.${trainingId}`]: deleteField(),
     });
 
     await batch.commit();

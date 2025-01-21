@@ -112,6 +112,7 @@ onMounted(() => {
     userAuth.value.uid,
     (docData) => {
       userData.value = docData;
+      console.log('userData.value', userData.value);
     },
     (error) => {
       console.error('Chyba pri čítaní user dát:', error);

@@ -29,7 +29,7 @@
     </template>
   </app-card>
 
-  <app-modal v-if="isModalOpen" v-model:show="isModalOpen">
+  <app-modal v-model:show="isModalOpen">
     <div class="flex flex-col items-center min-w-64">
       <div>Naozaj sa chcete odhlasit z treningu dna {{ selectedTrainingData?.trainingDate }}</div>
       <div class="flex gap-2 mt-4">
@@ -53,7 +53,7 @@ import { ref, computed } from 'vue';
 import AppCard from '@/components/AppCard.vue';
 import AppModal from '@/components/AppModal.vue';
 import useData from '@/composables/useData';
-import { UserData } from '@/types/UserDataTypes';
+import { UserData, RegisteredTrainings } from '@/types/UserDataTypes';
 
 const props = defineProps<{
   userData: UserData;
@@ -63,10 +63,10 @@ const { unsubscribeFromTrainingWithBatch } = useData();
 
 const isModalOpen = ref(false);
 const selectedTrainingKey = ref<string | null>(null);
-const selectedTrainingData = ref<UserData['registerTrainings'][string] | null>(null);
+const selectedTrainingData = ref<RegisteredTrainings | null>(null);
 
 const sortedTrainings = computed(() => {
-  const trainingsObject = props.userData?.registerTrainings || {};
+  const trainingsObject = props.userData?.registeredTrainings || {};
 
   const trainingsArray = Object.entries(trainingsObject).map(([key, training]) => {
     return {
@@ -106,7 +106,7 @@ const unsubscribeFromTraining = async () => {
   }
 };
 
-const openModal = (key: string, training: UserData['registerTrainings'][string]) => {
+const openModal = (key: string, training: RegisteredTrainings) => {
   selectedTrainingKey.value = key;
   selectedTrainingData.value = training;
   isModalOpen.value = true;

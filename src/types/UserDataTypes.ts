@@ -1,14 +1,14 @@
 export interface UserData {
   id: string;
   date: string;
-  registerTrainings: Record<
-    string,
-    {
-      trainingDate: string;
-      trainingName: string;
-      trainingTime: string;
-    }
-  >;
+  registeredTrainings: RegisteredTrainings[];
   role: string;
   email: string;
+}
+
+export interface RegisteredTrainings {
+  trainingId: string;
+  trainingDate: string;
+  trainingName: string;
+  trainingTime: string;
 }
