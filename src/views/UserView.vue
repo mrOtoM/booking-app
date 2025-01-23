@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-slate-100 h-screen">
+  <div class="bg-slate-100 h-screen text-gray-700">
     <div v-if="isUserProfileLoading">Loading....</div>
     <div v-else-if="userProfile">
       <nav-bar :displayName="userProfile.displayName" />
@@ -17,7 +17,7 @@
   </div>
 
   <app-modal v-if="isModalOpen" v-model:show="isModalOpen">
-    <div class="flex flex-col items-center min-w-64">
+    <div class="flex flex-col items-center min-w-64 text-gray-700">
       <p>Prihlasit sa na trening {{ selectedDayInfo?.trainingDate }} ?</p>
       <div class="flex gap-2 mt-4">
         <button
@@ -52,6 +52,7 @@ const { deleteTrainingDocument, updateRegisterTrainingWithBatch, getUserTraining
 const isModalOpen = ref(false);
 const selectedDayInfo = ref<SpecialDayInfo>();
 const userData = ref<any>(null);
+const unsubscribe = ref<(() => void) | undefined>();
 
 async function submitDeleteTraining(docId: string) {
   try {
@@ -104,29 +105,28 @@ const handleDateSelectionUser = (payload: SpecialDayInfo) => {
 };
 
 onMounted(() => {
-  if (!userAuth.value?.uid) {
-    return;
-  }
+  if (!userAuth.value?.uid) return;
 
-  const unsubscribe = getUserTrainingData(
+  unsubscribe.value = getUserTrainingData(
     userAuth.value.uid,
     (docData) => {
       userData.value = docData;
-      console.log('userData.value', userData.value);
     },
     (error) => {
       console.error('Chyba pri čítaní user dát:', error);
     }
   );
+});
 
-  onUnmounted(() => {
-    unsubscribe();
-  });
+onUnmounted(() => {
+  if (unsubscribe.value) {
+    unsubscribe.value();
+  }
 });
 </script>
 
 <style scoped>
 .user-content {
-  @apply w-[800px]  mt-4;
+  @apply w-[700px];
 }
 </style>

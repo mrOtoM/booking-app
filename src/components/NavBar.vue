@@ -1,6 +1,6 @@
 <template>
-  <div class="nav-bar">
-    <div class="w-[800px] flex justify-between items-center">
+  <div class="nav-bar text-gray-700">
+    <div class="w-[700px] flex justify-between items-center pl-4 pr-4">
       <span> Ahoj {{ displayName }}</span>
       <app-dropdown-button :items="dropdownActions" :rounded="true">
         <template #label><icon-user /></template>

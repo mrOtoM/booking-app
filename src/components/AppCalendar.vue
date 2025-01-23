@@ -15,7 +15,11 @@
         v-for="day in days"
         :key="day.id"
         class="calendar-day"
-        :class="{ 'current-day': isToday(day.date), 'special-day': isSpecialDay(day.date) }"
+        :class="{
+          'current-day': isToday(day.date),
+          'special-day': isSpecialDay(day.date),
+          'past-day': isOlderThanToday(day.date),
+        }"
         @click="selectDate(day.date)"
       >
         <span>{{ day.day }}</span>
@@ -25,7 +29,7 @@
             v-for="(box, index) in getSpecialDayInfo(day.date)"
             :key="index"
             class="info-message"
-            :class="`info-message--${getBoxClass(box.trainingType)}`"
+            :class="`info-message--${getBoxClass(box.trainingType, box.trainingTime, day.date)}`"
           >
             <p>{{ box.trainingName }}</p>
             <p>{{ box.trainingTime }}</p>
@@ -51,6 +55,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'selected-date-admin', date: string): void;
+  (e: 'selected-month-data-admin', data: Record<string, SpecialDayInfo[]>): void;
   (e: 'selected-date-user', payload: SpecialDayInfo): void;
   (e: 'update:show', show: boolean): void;
 }>();
@@ -96,11 +101,19 @@ const getSpecialDayInfo = (date: Date): SpecialDayInfo[] => {
   return specialDays.value[dayNum] || [];
 };
 
+const isOlderThanToday = (date: Date) => {
+  return dayjs(date).isBefore(today, 'day');
+};
+
 const formatDate = (date: dayjs.Dayjs | Date) => {
   return dayjs(date).format('DD.MM.YYYY');
 };
 
 const selectDate = (date: Date) => {
+  if (isOlderThanToday(date) && isSpecialDay(date)) {
+    return; // Stop the function if the date is special and older than today
+  }
+
   selectedDate.value = date;
 
   const formattedDate = formatDate(date);
@@ -131,6 +144,7 @@ const getMonthlyTrainings = (monthString: string) => {
     monthString,
     (docs) => {
       const tempSpecialDays: Record<string, SpecialDayInfo[]> = {};
+      console.log('tempSpecialDays', tempSpecialDays);
 
       docs.forEach((doc: any) => {
         const dayId = doc.id;
@@ -145,6 +159,7 @@ const getMonthlyTrainings = (monthString: string) => {
       });
 
       specialDays.value = tempSpecialDays;
+      emit('selected-month-data-admin', tempSpecialDays);
     },
     (err) => {
       console.error('Chyba pri získavaní tréningov:', err);
@@ -176,17 +191,28 @@ const prevMonth = () => {
   getMonthlyTrainings(monthString);
 };
 
-const getBoxClass = (type: string): string => {
+const isPastTraining = (trainingTime: string, trainingDate: Date) => {
+  const trainingDateTime = dayjs(trainingDate)
+    .hour(parseInt(trainingTime.split(':')[0]))
+    .minute(parseInt(trainingTime.split(':')[1]));
+  return dayjs().isAfter(trainingDateTime);
+};
+
+const getBoxClass = (type: string, trainingTime: string, trainingDate: Date): string => {
+  if (isPastTraining(trainingTime, trainingDate)) {
+    return 'out';
+  }
+
   switch (type) {
     case 'UNDEFINED':
       return 'green';
     case 'TABATA':
       return 'cyan';
-    case 'CIRCLE':
+    case 'UNDEFINED_3':
       return 'yellow';
     case 'UNDEFINED_2':
       return 'red';
-    case 'UNDEFINED_3':
+    case 'CIRCLE':
       return 'purple';
     case 'STRENGTH':
       return 'blue';
@@ -211,12 +237,14 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .calendar {
-  max-width: 500px;
+  max-width: 690px;
   margin: 0 auto;
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
   font-family: Arial, sans-serif;
+  margin-top: 1rem;
+  color: #000;
 }
 
 .calendar-header {
@@ -252,8 +280,13 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
+.past-day {
+  pointer-events: none;
+  cursor: default;
+}
+
 .current-day {
-  background-color: #efefef;
+  background-color: #ededed;
   color: white;
 }
 
@@ -271,6 +304,13 @@ onBeforeUnmount(() => {
   flex-direction: column;
 }
 
+.info-message--out {
+  background-color: #e0e0e0;
+  color: #afafaf;
+  pointer-events: none;
+  cursor: default;
+}
+
 .info-message--green {
   background: linear-gradient(to top, #d4edda, #c3e6cb);
   color: #155724;
@@ -279,7 +319,7 @@ onBeforeUnmount(() => {
 
 .info-message--cyan {
   background: linear-gradient(to top, #d1ecf1, #bee5eb);
-  color: #0c5460;
+  color: #0e5b69;
   border: 1px solid #bee5eb;
 }
 
@@ -300,6 +340,7 @@ onBeforeUnmount(() => {
   color: #4b1c72;
   border: 1px solid #d6b3f5;
 }
+
 .info-message--blue {
   background: linear-gradient(to top, #d1e0f8, #a6c8f2);
   color: #083d77;

@@ -7,11 +7,17 @@
         <div class="admin-content">
           <app-card title="Kalendar">
             <template v-slot:custom-content>
-              <app-calendar v-model:show="isModalOpen" @selected-date-admin="handleDateSelectionAdmin" />
+              <app-calendar
+                v-model:show="isModalOpen"
+                @selected-date-admin="handleDateSelectionAdmin"
+                @selected-month-data-admin="handleMonthTrainingsDataAdmin"
+              />
             </template>
           </app-card>
-          <app-card title="Zoznam prihlasenych treningov">
-            <template v-slot:custom-content> loool </template>
+          <app-card>
+            <template v-slot:custom-content>
+              <AdminTrainingView :month-trainings-data="monthTrainingsData" />
+            </template>
           </app-card>
         </div>
       </div>
@@ -20,7 +26,7 @@
   </div>
 
   <app-modal v-if="isModalOpen" v-model:show="isModalOpen">
-    <div class="flex flex-col items-center min-w-64">
+    <div class="flex flex-col items-center min-w-64 text-gray-700">
       <h1 class="text-l">Pridať tréning</h1>
       <div class="flex mt-6 w-full">
         <select
@@ -73,6 +79,7 @@ import NavBar from '@/components/NavBar.vue';
 import AppCard from '@/components/AppCard.vue';
 import AppModal from '@/components/AppModal.vue';
 import AppCalendar from '@/components/AppCalendar.vue';
+import AdminTrainingView from './AdminTrainingView.vue';
 
 const { isUserProfileLoading, userProfile } = useUser();
 const { getTrainingTypesDocument, createTrainingDocument } = useData();
@@ -83,6 +90,7 @@ const selectedTraining = ref();
 const trainingTypes = ref();
 const selectedHour = ref('18');
 const selectedMinute = ref('30');
+const monthTrainingsData = ref();
 
 const hours = Array.from({ length: 17 }, (_, i) => (i + 6).toString().padStart(2, '0'));
 const minutes = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'));
@@ -126,6 +134,10 @@ const handleDateSelectionAdmin = (date: string) => {
   console.log('selected-date-admin', date);
 };
 
+const handleMonthTrainingsDataAdmin = (data: any) => {
+  monthTrainingsData.value = data;
+};
+
 onMounted(async () => {
   await getTrainingTypes();
 
@@ -137,6 +149,6 @@ onMounted(async () => {
 
 <style scoped>
 .admin-content {
-  @apply w-[800px]  mt-4;
+  @apply w-[700px] text-gray-700;
 }
 </style>

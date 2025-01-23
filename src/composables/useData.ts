@@ -141,7 +141,7 @@ const useData = () => {
       },
       (err) => {
         errorCallback(err);
-      }
+      }   
     );
 
     return unsubscribe;
