@@ -1,16 +1,28 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 
 import { auth } from '@/firebase/config';
-import HomeView from '@/views/HomeView.vue';
 import UserView from '@/views/UserView.vue';
-import AdminView from '@/views/AdminView.vue';
+import AdminView from '@/views/admin/AdminView.vue';
 import useUser from '@/composables/useUser';
+import LoginView from '@/views/LoginView.vue';
+import RegisterView from '@/views/RegisterView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView,
+    redirect: '/login',
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginView,
+    meta: { public: true },
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: RegisterView,
+    meta: { public: true },
   },
   {
     path: '/user/:id',
@@ -33,11 +45,12 @@ router.beforeEach((to, from, next) => {
   const { userAuth, role, isUserProfileLoading } = useUser();
   const currentUser = auth.currentUser;
 
-  if (!currentUser) {
-    if (to.name !== 'home') {
-      return next({ name: 'home' });
-    }
+  if (to.meta.public) {
     return next();
+  }
+
+  if (!currentUser) {
+    return next({ name: 'login' });
   }
 
   if (isUserProfileLoading.value) {
