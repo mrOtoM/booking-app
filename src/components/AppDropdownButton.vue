@@ -39,7 +39,7 @@ const props = withDefaults(
     label: '',
     items: () => [{ label: '' }],
     rounded: false,
-  }
+  },
 );
 
 const toggleDropdown = (event: Event) => {
@@ -94,7 +94,9 @@ onUnmounted(() => {
 .rounded-button {
   border-radius: 50%;
   padding: 10px;
-  transition: background-color 0.3s ease, transform 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    transform 0.3s ease;
 }
 
 .rounded-button:hover {
@@ -114,7 +116,9 @@ onUnmounted(() => {
   right: 0;
   margin-top: 55px;
   border: 1px solid var(--light-blue);
-  transition: transform 0.1s ease, visibility 0s ease;
+  transition:
+    transform 0.1s ease,
+    visibility 0s ease;
   transform-origin: top;
   transform: scaleY(0);
   visibility: hidden;

@@ -32,11 +32,11 @@ const buttonClass = computed(() => {
 });
 
 const base =
-  'inline-block text-sm tracking-wide outline-none transition-colors duration-300 disabled:cursor-not-allowed rounded disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400';
+  'inline-block text-sm tracking-wide outline-none transition-colors duration-300 disabled:cursor-not-allowed rounded disabled:pointer-events-none rounded-md disabled:bg-gray-100 disabled:text-gray-400';
 
 const styles = {
   primary: base + ' px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white',
-  secondary: base + ' px-4 py-2 bg-gray-100 hover:bg-gray-200 text-slate-800',
+  secondary: base + ' px-4 py-2 bg-gray-100 hover:bg-gray-200 text-slate-600',
   tertiary: 'bg-red',
 };
 </script>

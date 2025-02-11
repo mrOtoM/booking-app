@@ -16,7 +16,7 @@
   }
 
   p {
-    @apply text-slate-500;
+    @apply leading-none text-slate-500;
   }
 }
 

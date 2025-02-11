@@ -141,7 +141,7 @@ const useData = () => {
       },
       (err) => {
         errorCallback(err);
-      }   
+      }
     );
 
     return unsubscribe;
@@ -168,6 +168,39 @@ const useData = () => {
     return unsubscribe;
   };
 
+  const getDailyTrainingDataForAdminDocument = async (trainingMonth: string, trainingDay: string) => {
+    const docRef = doc(db, 'trainings', trainingMonth, 'monthlyTrainings', trainingDay);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      console.log('No such document!');
+    }
+  };
+
+  const getDailyTrainingParticipantsForAdminCollection = (
+    trainingMonth: string,
+    trainingDay: string,
+    callback: (docs: any[]) => void,
+    errorCallback: (error: any) => void
+  ) => {
+    const colRef = collection(db, 'trainings', trainingMonth, 'monthlyTrainings', trainingDay, 'participants');
+
+    const unsubscribe = onSnapshot(
+      colRef,
+      (snapshot) => {
+        const documents = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        callback(documents);
+      },
+      (error) => {
+        errorCallback(error);
+      }
+    );
+
+    return unsubscribe;
+  };
+
   return {
     deleteTrainingDocument,
     createTrainingCollection,
@@ -179,6 +212,8 @@ const useData = () => {
     updateRegisterTrainingWithBatch,
     getUserTrainingData,
     unsubscribeFromTrainingWithBatch,
+    getDailyTrainingDataForAdminDocument,
+    getDailyTrainingParticipantsForAdminCollection,
   };
 };
 

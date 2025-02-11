@@ -63,9 +63,9 @@ const email = ref('');
 const password = ref('');
 
 const handleRegister = async () => {
-  const displayName = firstName.value + ' ' + secondName.value;
+  const fullName = firstName.value.trim() + ' ' + secondName.value.trim();
 
-  await register(email.value, password.value, displayName);
+  await register(email.value, password.value, fullName);
 
   router.push('/login');
 };

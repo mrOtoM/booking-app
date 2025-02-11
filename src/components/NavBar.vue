@@ -1,6 +1,6 @@
 <template>
-  <div class="nav-bar text-gray-700">
-    <div class="w-[700px] flex justify-between items-center pl-4 pr-4">
+  <div class="flex min-h-16 w-full items-center justify-center bg-white text-gray-700 shadow-md">
+    <div class="flex w-[700px] items-center justify-between pl-4 pr-4">
       <span> Ahoj {{ displayName }}</span>
       <app-dropdown-button :items="dropdownActions" :rounded="true">
         <template #label><icon-user /></template>
@@ -41,15 +41,3 @@ const handleLogout = async () => {
   await logout();
 };
 </script>
-
-<style scoped>
-.nav-bar {
-  width: 100%;
-  background-color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 4rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-</style>

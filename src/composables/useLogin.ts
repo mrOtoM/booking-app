@@ -13,6 +13,7 @@ const useLogin = () => {
 
     try {
       const response = await signInWithEmailAndPassword(auth, email, password);
+      console.log(response);
 
       if (!response) {
         throw new Error('Problém s prihlásením používateľa');

@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 
 import { auth } from '@/firebase/config';
-import UserView from '@/views/UserView.vue';
+import UserView from '@/views/user/UserView.vue';
 import AdminView from '@/views/admin/AdminView.vue';
 import useUser from '@/composables/useUser';
 import LoginView from '@/views/LoginView.vue';
@@ -42,7 +42,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const { userAuth, role, isUserProfileLoading } = useUser();
+  const { userAuth, role } = useUser();
   const currentUser = auth.currentUser;
 
   if (to.meta.public) {
@@ -51,14 +51,6 @@ router.beforeEach((to, from, next) => {
 
   if (!currentUser) {
     return next({ name: 'login' });
-  }
-
-  if (isUserProfileLoading.value) {
-    if (to.name !== 'home') {
-      return next({ name: 'home' });
-    } else {
-      return next();
-    }
   }
 
   if (role.value === 'admin') {

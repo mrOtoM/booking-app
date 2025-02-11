@@ -1,39 +1,32 @@
 <template>
-  <div class="calendar">
-    <div class="calendar-header">
-      <button class="w-4" @click="prevMonth">‹</button>
-      <span>{{ monthName }} {{ year }}</span>
-      <button class="w-4" @click="nextMonth">›</button>
+  <div class="mx-auto mt-4 max-w-[690px] overflow-hidden rounded-lg border border-gray-200">
+    <div class="mb-1 flex items-center justify-between bg-stone-200 p-3 font-bold">
+      <button @click="prevMonth" class="h-full w-6">‹</button>
+      <span class="text-stone-700">{{ monthName }} {{ year }}</span>
+      <button @click="nextMonth" class="h-full w-6">›</button>
     </div>
-
-    <div class="calendar-grid">
-      <div v-for="day in daysOfWeek" :key="day" class="calendar-day-header">
+    <div class="grid grid-cols-7 gap-[1px] p-0">
+      <div v-for="day in daysOfWeek" :key="day" class="text-center font-bold text-stone-600">
         {{ day }}
       </div>
-
       <div
         v-for="day in days"
         :key="day.id"
-        class="calendar-day"
-        :class="{
-          'current-day': isToday(day.date),
-          'special-day': isSpecialDay(day.date),
-          'past-day': isOlderThanToday(day.date),
-        }"
-        @click="selectDate(day.date)"
+        :class="[
+          'h-[85px] cursor-pointer overflow-hidden border border-gray-200 bg-white p-2 text-center',
+          getDayClass(day.date),
+        ]"
+        @click="selectDate(day)"
       >
-        <span>{{ day.day }}</span>
+        <span class="text-sm">{{ day.day }}</span>
 
-        <div v-if="isSpecialDay(day.date)" class="info-box">
-          <div
-            v-for="(box, index) in getSpecialDayInfo(day.date)"
-            :key="index"
-            class="info-message"
-            :class="`info-message--${getBoxClass(box.trainingType, box.trainingTime, day.date)}`"
-          >
-            <p>{{ box.trainingName }}</p>
-            <p>{{ box.trainingTime }}</p>
-          </div>
+        <div
+          v-for="(box, index) in getSpecialDayInfo(day.date)"
+          :key="index"
+          :class="['rounded p-1', getTrainingBoxClass(box)]"
+        >
+          <h3 class="mb-1 text-[0.625rem] font-semibold leading-none">{{ box.name }}</h3>
+          <h3 class="text-[0.625rem] leading-none">{{ box.time }}</h3>
         </div>
       </div>
     </div>
@@ -44,20 +37,17 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import dayjs from 'dayjs';
 
-import useData from '@/composables/useData';
 import { SpecialDayInfo } from '@/types/CalendarTypes';
+import { useCalendarStore } from '@/stores/useCalendarStore';
 
-const { getMonthlyTrainingsCollection } = useData();
+const calendarStore = useCalendarStore();
 
 const props = defineProps<{
   show: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'selected-date-admin', date: string): void;
-  (e: 'selected-month-data-admin', data: Record<string, SpecialDayInfo[]>): void;
-  (e: 'selected-date-user', payload: SpecialDayInfo): void;
-  (e: 'update:show', show: boolean): void;
+  (e: 'selected-date', date: string): void;
 }>();
 
 const today = dayjs();
@@ -65,9 +55,7 @@ const year = ref(today.year());
 const month = ref(today.month());
 const selectedDate = ref();
 const daysOfWeek = ['Po', 'Ut', 'St', 'Štv', 'Pi', 'So', 'Ne'];
-const specialDays = ref<Record<string, SpecialDayInfo[]>>({});
 const monthName = computed(() => dayjs().month(month.value).format('MMMM'));
-let unsubscribeMonthlyTrainings: null | (() => void) = null;
 
 const days = computed(() => {
   const startOfMonth = dayjs().year(year.value).month(month.value).startOf('month');
@@ -89,82 +77,64 @@ const days = computed(() => {
   });
 });
 
-const isToday = (date: Date) => dayjs(date).isSame(today, 'day');
+const getDayClass = (date: Date): string => {
+  const isPast = dayjs(date).isBefore(today, 'day');
+  const isToday = dayjs(date).isSame(today, 'day');
 
-const isSpecialDay = (date: Date) => {
-  const dayNum = dayjs(date).format('YYYY_MM_DD');
-  return !!specialDays.value[dayNum];
+  if (isPast) {
+    return 'opacity-40 pointer-events-none';
+  }
+
+  if (isToday) {
+    return 'bg-stone-100 ';
+  }
+
+  return '';
 };
 
-const getSpecialDayInfo = (date: Date): SpecialDayInfo[] => {
-  const dayNum = dayjs(date).format('YYYY_MM_DD');
-  return specialDays.value[dayNum] || [];
+const getTrainingBoxClass = (box: SpecialDayInfo): string => {
+  const styles = {
+    green: 'bg-gradient-to-t from-[#d4edda] to-[#c3e6cb] text-[#155724] border border-[#c3e6cb]',
+    cyan: 'bg-gradient-to-t from-[#d1ecf1] to-[#bee5eb] text-[#0e5b69] border border-[#bee5eb]',
+    yellow: 'bg-gradient-to-t from-[#fff3cd] to-[#f7e5af] text-[#856404] border border-[#ffeeba]',
+    red: 'bg-gradient-to-t from-[#f8d7da] to-[#f5c6cb] text-[#721c24] border border-[#f5c6cb]',
+    purple: 'bg-gradient-to-t from-[#e7d4f8] to-[#d6b3f5] text-[#4b1c72] border border-[#d6b3f5]',
+    blue: 'bg-gradient-to-t from-[#d1e0f8] to-[#a6c8f2] text-[#083d77] border border-[#a6c8f2]',
+  };
+
+  if (box.type === 'STRENGTH') {
+    return styles.green;
+  }
+
+  if (box.type === 'CIRCLE') {
+    return styles.purple;
+  }
+
+  if (box.type === 'TABATA') {
+    return styles.blue;
+  }
+
+  return '';
 };
 
-const isOlderThanToday = (date: Date) => {
-  return dayjs(date).isBefore(today, 'day');
+const getSpecialDayInfo = (date: Date) => {
+  const dayKey = dayjs(date).format('DD_MM_YYYY');
+  const training = calendarStore.monthlyTrainings.find((item) => item.id === dayKey);
+  return training ? [training.trainingDetails] : [];
 };
 
 const formatDate = (date: dayjs.Dayjs | Date) => {
   return dayjs(date).format('DD.MM.YYYY');
 };
 
-const selectDate = (date: Date) => {
-  if (isOlderThanToday(date) && isSpecialDay(date)) {
-    return; // Stop the function if the date is special and older than today
-  }
+const selectDate = (day: { id: number; day: number; date: Date }) => {
+  selectedDate.value = day.date;
 
-  selectedDate.value = date;
+  const formattedDate = formatDate(day.date);
 
-  const formattedDate = formatDate(date);
+  calendarStore.setSelectedDateAdmin(formattedDate);
 
-  const dayInfoArray = getSpecialDayInfo(date);
-  const dayInfo: SpecialDayInfo = dayInfoArray[0] || {
-    trainingName: '',
-    trainingTime: '',
-    trainingType: '',
-    trainingDate: formattedDate,
-  };
-
-  emit('selected-date-admin', formattedDate);
-
-  emit('selected-date-user', {
-    ...dayInfo,
-    trainingDate: formattedDate,
-  });
-};
-
-const getMonthlyTrainings = (monthString: string) => {
-  if (unsubscribeMonthlyTrainings) {
-    unsubscribeMonthlyTrainings();
-    unsubscribeMonthlyTrainings = null;
-  }
-
-  unsubscribeMonthlyTrainings = getMonthlyTrainingsCollection(
-    monthString,
-    (docs) => {
-      const tempSpecialDays: Record<string, SpecialDayInfo[]> = {};
-      console.log('tempSpecialDays', tempSpecialDays);
-
-      docs.forEach((doc: any) => {
-        const dayId = doc.id;
-        if (!tempSpecialDays[dayId]) {
-          tempSpecialDays[dayId] = [];
-        }
-        tempSpecialDays[dayId].push({
-          trainingName: doc.trainingName,
-          trainingTime: doc.trainingTime,
-          trainingType: doc.trainingType,
-        });
-      });
-
-      specialDays.value = tempSpecialDays;
-      emit('selected-month-data-admin', tempSpecialDays);
-    },
-    (err) => {
-      console.error('Chyba pri získavaní tréningov:', err);
-    }
-  );
+  emit('selected-date', formattedDate);
 };
 
 const nextMonth = () => {
@@ -176,7 +146,7 @@ const nextMonth = () => {
   }
   const paddedMonth = String(month.value + 1).padStart(2, '0');
   const monthString = `${paddedMonth}_${year.value}`;
-  getMonthlyTrainings(monthString);
+  calendarStore.fetchMonthlyTrainings(monthString);
 };
 
 const prevMonth = () => {
@@ -188,162 +158,17 @@ const prevMonth = () => {
   }
   const paddedMonth = String(month.value + 1).padStart(2, '0');
   const monthString = `${paddedMonth}_${year.value}`;
-  getMonthlyTrainings(monthString);
-};
-
-const isPastTraining = (trainingTime: string, trainingDate: Date) => {
-  const trainingDateTime = dayjs(trainingDate)
-    .hour(parseInt(trainingTime.split(':')[0]))
-    .minute(parseInt(trainingTime.split(':')[1]));
-  return dayjs().isAfter(trainingDateTime);
-};
-
-const getBoxClass = (type: string, trainingTime: string, trainingDate: Date): string => {
-  if (isPastTraining(trainingTime, trainingDate)) {
-    return 'out';
-  }
-
-  switch (type) {
-    case 'UNDEFINED':
-      return 'green';
-    case 'TABATA':
-      return 'cyan';
-    case 'UNDEFINED_3':
-      return 'yellow';
-    case 'UNDEFINED_2':
-      return 'red';
-    case 'CIRCLE':
-      return 'purple';
-    case 'STRENGTH':
-      return 'blue';
-    default:
-      return 'info-message';
-  }
+  calendarStore.fetchMonthlyTrainings(monthString);
 };
 
 onMounted(() => {
   const paddedMonth = String(month.value + 1).padStart(2, '0');
   const initialMonthString = `${paddedMonth}_${year.value}`;
-  getMonthlyTrainings(initialMonthString);
+
+  calendarStore.fetchMonthlyTrainings(initialMonthString);
 });
 
 onBeforeUnmount(() => {
-  if (unsubscribeMonthlyTrainings) {
-    unsubscribeMonthlyTrainings();
-    unsubscribeMonthlyTrainings = null;
-  }
+  calendarStore.clearSubscription();
 });
 </script>
-
-<style scoped>
-.calendar {
-  max-width: 690px;
-  margin: 0 auto;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-  margin-top: 1rem;
-  color: #000;
-}
-
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  background-color: #f4f4f4;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-  padding: 0px;
-}
-
-.calendar-day-header {
-  text-align: center;
-  font-weight: bold;
-  color: #555;
-}
-
-.calendar-day {
-  text-align: center;
-  height: 85px;
-  cursor: pointer;
-  border: 1px solid #ddd;
-  background-color: white;
-  padding: 3px;
-  overflow: hidden;
-}
-
-.past-day {
-  pointer-events: none;
-  cursor: default;
-}
-
-.current-day {
-  background-color: #ededed;
-  color: white;
-}
-
-/* box styling */
-.info-box {
-  margin-top: 2px;
-}
-
-.info-message {
-  padding: 1px;
-  border-radius: 3px;
-  margin-bottom: 3px;
-  font-size: 10px;
-  display: flex;
-  flex-direction: column;
-}
-
-.info-message--out {
-  background-color: #e0e0e0;
-  color: #afafaf;
-  pointer-events: none;
-  cursor: default;
-}
-
-.info-message--green {
-  background: linear-gradient(to top, #d4edda, #c3e6cb);
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.info-message--cyan {
-  background: linear-gradient(to top, #d1ecf1, #bee5eb);
-  color: #0e5b69;
-  border: 1px solid #bee5eb;
-}
-
-.info-message--yellow {
-  background: linear-gradient(to top, #fff3cd, #f7e5af);
-  color: #856404;
-  border: 1px solid #ffeeba;
-}
-
-.info-message--red {
-  background: linear-gradient(to top, #f8d7da, #f5c6cb);
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.info-message--purple {
-  background: linear-gradient(to top, #e7d4f8, #d6b3f5);
-  color: #4b1c72;
-  border: 1px solid #d6b3f5;
-}
-
-.info-message--blue {
-  background: linear-gradient(to top, #d1e0f8, #a6c8f2);
-  color: #083d77;
-  border: 1px solid #a6c8f2;
-}
-</style>

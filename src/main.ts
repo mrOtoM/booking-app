@@ -4,6 +4,7 @@ import { createApp } from 'vue';
 import { doc, getDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import PrimeVue from 'primevue/config';
+import { createPinia } from 'pinia';
 
 import App from './App.vue';
 import router from './router';
@@ -11,6 +12,7 @@ import useUser from './composables/useUser';
 import { db } from '@/firebase/config';
 import { UserProfile } from '@/types/CustomTypes';
 
+const pinia = createPinia();
 const auth = getAuth();
 const { isUserProfileLoading, setUserData } = useUser();
 
@@ -37,6 +39,7 @@ onAuthStateChanged(auth, async (firebaseUser) => {
   if (!app) {
     app = createApp(App);
     app.use(router);
+    app.use(pinia);
     app.use(PrimeVue);
     app.mount('#app');
   }
